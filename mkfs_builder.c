@@ -1,4 +1,4 @@
-// Build: gcc -O2 -std=c17 -Wall -Wextra mkfs_minivsfs.c -o mkfs_builder
+// Build: gcc -O2 -std=c17 -Wall -Wextra mkfs_builder.c -o mkfs_builder
 #define _FILE_OFFSET_BITS 64
 #include <stdio.h>
 #include <stdlib.h>
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     int size_kib = 0;
     int inodes = 0;
     
-    // Parse command line arguments
+    // CLI parsing
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--image") == 0 && i + 1 < argc) {
             image_file = argv[++i];
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // Validate arguments
+    // Validate  (Error handlin)
     if (!image_file || size_kib < 180 || size_kib > 4096 || inodes < 128 || inodes > 512) {
         usage(argv[0]);
         return 1;
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < DIRECT_MAX; i++) {
         root_inode.direct[i] = 0;
     }
-    root_inode.proj_id = 0; // You might want to set your group ID here
+    root_inode.proj_id = 13; 
     root_inode.uid16_gid16 = 0;
     root_inode.xattr_ptr = 0;
     
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     memcpy(block_buffer, &sb, sizeof(sb));
     fwrite(block_buffer, 1, BS, fp);
     
-    // Write inode bitmap (mark root inode as used)
+    // Write inode bitmap (marks root inode as used)
     memset(block_buffer, 0, BS);
     block_buffer[0] = 0x01; // inode 1 (root) is used
     fwrite(block_buffer, 1, BS, fp);

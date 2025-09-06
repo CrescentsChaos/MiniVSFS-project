@@ -20,19 +20,19 @@ typedef struct {
 
     // THIS FIELD SHOULD STAY AT THE END
     // ALL OTHER FIELDS SHOULD BE ABOVE THIS
-    uint32_t magic;               // 0x4D565346 = "MVSF"
+    uint32_t magic;               // 0x4D565346
     uint32_t version;             // 1
     uint32_t block_size;          // 4096
-    uint64_t total_blocks;        // size_kib * 1024 / 4096
-    uint64_t inode_count;         // from CLI
-    uint64_t inode_bitmap_start;  // block 1
-    uint64_t inode_bitmap_blocks; // 1
-    uint64_t data_bitmap_start;   // block 2
-    uint64_t data_bitmap_blocks;  // 1
-    uint64_t inode_table_start;   // block 3
-    uint64_t inode_table_blocks;  // calculated
-    uint64_t data_region_start;   // after inode table
-    uint64_t data_region_blocks;  // remaining blocks
+    uint64_t total_blocks;        
+    uint64_t inode_count;         
+    uint64_t inode_bitmap_start;  
+    uint64_t inode_bitmap_blocks; 
+    uint64_t data_bitmap_start;   
+    uint64_t data_bitmap_blocks;  
+    uint64_t inode_table_start;   
+    uint64_t inode_table_blocks; 
+    uint64_t data_region_start;   
+    uint64_t data_region_blocks;  
     uint64_t root_inode;          // 1
     uint64_t mtime_epoch;         // build time
     uint32_t flags; 
@@ -50,17 +50,17 @@ typedef struct {
     // ALL OTHER FIELDS SHOULD BE ABOVE THIS
     uint16_t mode;                // file type and permissions
     uint16_t links;               // number of hard links
-    uint32_t uid;                 // user ID
-    uint32_t gid;                 // group ID
-    uint64_t size_bytes;          // file size in bytes
+    uint32_t uid;                 // 0
+    uint32_t gid;                 // 0
+    uint64_t size_bytes;          
     uint64_t atime;               // access time
     uint64_t mtime;               // modification time
     uint64_t ctime;               // creation time
-    uint32_t direct[DIRECT_MAX];  // direct block pointers
+    uint32_t direct[DIRECT_MAX];  
     uint32_t reserved_0;          // 0
     uint32_t reserved_1;          // 0
     uint32_t reserved_2;          // 0
-    uint32_t proj_id;             // group ID
+    uint32_t proj_id;             // 13
     uint32_t uid16_gid16;         // 0
     uint64_t xattr_ptr;           // 0
     uint64_t inode_crc;   // low 4 bytes store crc32 of bytes [0..119]; high 4 bytes 0
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-    // Check if file is too large
+    // Checks if file is too large
     uint64_t file_size = file_stat.st_size;
     uint64_t blocks_needed = (file_size + BS - 1) / BS;
     if (blocks_needed > DIRECT_MAX) {
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
         new_inode->direct[i] = 0;
     }
     
-    new_inode->proj_id = 0;
+    new_inode->proj_id = 13;
     new_inode->uid16_gid16 = 0;
     new_inode->xattr_ptr = 0;
     
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-    // Check if file already exists
+    // Checks if file already exists
     for (int i = 0; i < entries_per_block; i++) {
         if (entries[i].inode_no != 0 && strcmp(entries[i].name, basename) == 0) {
             fprintf(stderr, "Error: File '%s' already exists in filesystem\n", basename);
@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // Create new directory entry
+    // Creates new directory entry
     dirent64_t *new_entry = &entries[free_entry_idx];
     memset(new_entry, 0, sizeof(dirent64_t));
     new_entry->inode_no = free_inode_num;
@@ -392,18 +392,18 @@ int main(int argc, char *argv[]) {
     strcpy(new_entry->name, basename);
     dirent_checksum_finalize(new_entry);
     
-    // Update root inode (increment links and size if needed)
+    // Updates root inode (increment links and size if needed)
     root_inode->links++; // new file refers to root via ..
     root_inode->size_bytes += sizeof(dirent64_t);
     root_inode->mtime = time(NULL);
     root_inode->atime = time(NULL);
     inode_crc_finalize(root_inode);
     
-    // Update superblock checksum
+    // Updates superblock checksum
     superblock_t *sb_ptr = (superblock_t *)fs_image;
     superblock_crc_finalize(sb_ptr);
     
-    // Write output image
+    // Writes output image
     FILE *output_fp = fopen(output_file, "wb");
     if (!output_fp) {
         fprintf(stderr, "Error: Cannot create output image '%s': %s\n", output_file, strerror(errno));
